@@ -39,7 +39,7 @@ func (c *connection) serve(tcpConn *net.TCPConn) {
 	go c.startSendingToProxy(tcpConn)
 }
 
-const BUFFER_LEN = 1024
+const BUFFER_LEN = 1024 * 32
 
 func (c *connection) startSendingToProxy(tcpConn *net.TCPConn) {
 

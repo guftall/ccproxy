@@ -46,7 +46,7 @@ func (c *connection) serve() {
 	go c.writeToProxy()
 }
 
-const BUFFER_LEN = 1024
+const BUFFER_LEN = 1024 * 32
 
 func (c *connection) readFromProxy() {
 
