@@ -1,0 +1,6 @@
+# Client
+just run `go run cmd/client/main.go -client-addr 127.0.0.1:9990 -ccproxy-proxy-domain ccproxy.guftall.ir`
+and use 127.0.0.1:9990 as https proxy in your device.
+
+# Server
+use nginx.conf to proxy cdn requests, and run `go run cmd/server/main.go -server-addr 127.0.0.1:9991`
