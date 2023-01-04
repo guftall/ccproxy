@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"io"
 	"log"
 	"net"
@@ -46,56 +47,26 @@ func (c *connection) serve() {
 	go c.writeToProxy()
 }
 
-const BUFFER_LEN = 1024 * 32
+const BUFFER_LEN = 1024
 
 func (c *connection) readFromProxy() {
 
 	for {
-		_, reader, err := c.client.NextReader()
+		_, msg, err := c.client.ReadMessage()
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		buffer := make([]byte, BUFFER_LEN)
+		reader := bytes.NewReader(msg)
 
-		for {
-			count, err := reader.Read(buffer)
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				log.Println("read from proxy failed:", err)
-				break
-			}
-
-			log.Printf("read %d bytes from proxy\n", count)
-
-			if count > 0 {
-				count, err = c.tunnel.Write(buffer[:count])
-				if err != nil {
-					log.Println("write to tunnel failed", err)
-					break
-				}
-				log.Printf("wrote %d bytes to tunnel \n", count)
-			}
-
-			if count < BUFFER_LEN {
-				break
-			}
-		}
+		io.Copy(c.tunnel, reader)
 	}
 }
 
 func (c *connection) writeToProxy() {
 
 	for {
-		writer, err := c.client.NextWriter(websocket.BinaryMessage)
-		if err != nil {
-			log.Println("NextWriter:", err)
-			break
-		}
-
 		buffer := make([]byte, BUFFER_LEN)
 
 		count, err := c.tunnel.Read(buffer)
@@ -105,12 +76,11 @@ func (c *connection) writeToProxy() {
 		}
 		log.Printf("read %d bytes from tunnel\n", count)
 
-		count, err = writer.Write(buffer[:count])
+		err = c.client.WriteMessage(websocket.BinaryMessage, buffer[:count])
 		if err != nil {
 			log.Println("write to proxy:", err)
 			break
 		}
 		log.Printf("wrote %d bytes to proxy\n", count)
-		writer.Close()
 	}
 }
